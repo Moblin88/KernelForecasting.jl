@@ -35,4 +35,36 @@ using LinearAlgebra
             @test kvectorview ≈ kvector
         end
     end
+
+    @testset "LinearMatrixOperator" begin
+        data = [1.0 0.0; 0.0 1.0; 1.0 1.0; 2.0 0.0]
+        lags = 2
+        n = size(data, 1)
+        k = GaussianKernel(1.0)
+        kernels = KernelForecasting.precompute_kernels(k, data, lags)
+
+        # lag_embedding rows are a feature map for a real kernel matrix over
+        # distinct lag positions, so lag_embedding*lag_embedding' ≈ that
+        # kernel matrix (unit diagonal, since k(x,x) == 1, and unique rows,
+        # since the underlying positions are distinct).
+        lag_kernel = LaplaceKernel(1.0)
+        lag_positions = [[0.0], [1.0], [2.0], [3.0]]
+        lag_gram = [lag_kernel(x, y) for x in lag_positions, y in lag_positions]
+        lag_embedding = Matrix(cholesky(Symmetric(lag_gram)).L)
+
+        op = KernelForecasting.LinearMatrixOperator(kernels, lag_embedding)
+        edim = size(lag_embedding, 2)
+        model = reshape(1.0:(lags*edim), lags, edim)
+        out = zeros(lags, edim)
+
+        op(out, model)
+
+        expected = zeros(size(out))
+        for j in 1:(n - lags)
+            kmatrix = [@views k(data[x, :], data[y, :]) for x in range(j; length = lags), y in range(j; length = lags)]
+            p = lag_embedding[j, :]
+            expected .+= kmatrix * model * p * p'
+        end
+        @test out ≈ expected
+    end
 end
