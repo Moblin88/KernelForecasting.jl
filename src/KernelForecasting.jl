@@ -32,7 +32,7 @@ function precompute_kernels(k, data, lags)
     n = size(data, 1)
     1<=lags <= n || throw(ArgumentError("lags must be between 1 and the number of rows in data"))
     mem1 = @views k(data[1, :], data[1, :])
-    mem = Memory{typeof(mem1)}(undef, lags*(n-1) + n)
+    mem = Vector{typeof(mem1)}(undef, lags*(n-1) + n)
     # fill the first matrix
     mem[1] = mem1
     for j in 2:lags, i in 1:j
