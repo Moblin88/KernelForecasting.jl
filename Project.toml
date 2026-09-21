@@ -7,4 +7,5 @@ authors = ["Nicholas Engelking <moblin88@me.com> and contributors"]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [compat]
+LinearAlgebra = "1.10"
 julia = "1.10.10"
